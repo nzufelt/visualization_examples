@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <title>Course Topics: Data Visualization</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <style>
+    text {
+      font-family: 'Roboto', sans-serif;
+      pointer-events: none;
+    }
+    .active_legend {
+      fill-opacity: 1;
+    }
+    .topic {
+        stroke: black;
+    }
+    .webdev {
+      fill: rgb(186, 169, 52);
+      color: rgb(186, 169, 52);
+    }
+    .d3 {
+      fill: rgb(144, 6, 113);
+      color: rgb(144, 6, 113);
+    }
+    .data-analysis {
+      fill: rgb(62, 126, 80);
+      color: rgb(62, 126, 80);
+    }
+    .conceptual {
+      fill: rgb(95, 179, 179);
+      color: rgb(95, 179, 179);
+    }
+    .examples {
+      fill: rgb(129, 102, 71);
+      color: rgb(129, 102, 71);
+    }
+    .time-block-labels {
+      text-anchor: middle;
+    }
+    #container {
+      margin: 0 auto;
+      margin-top: 50px;
+      width: 95%;
+    }
+    </style>
+    <script src='https://d3js.org/d3.v4.min.js'></script>
+</head>
+<body>
+<div id="container"></div>
+
+<script>
+// ******* Data *******
+var topics = [
+    { topic: "design", type: "conceptual", spec: "idea", emphasis: 1, start_time: 2, end_time: 36},
+    { topic: "visualization concepts", type: "conceptual", spec: "concept", emphasis: 1, start_time: 1, end_time: 36},
+    { topic: "visualization examples", type: "examples", spec: "examples", emphasis: 1, start_time: 1, end_time: 20},
+    { topic: "html/css", type: "webdev", spec: "standard", emphasis: 1, start_time: 2 , end_time: 3 },
+    { topic: "javascript basics,<tspan dy='28' dx='-180'>manipulating the DOM</tspan>", type: "webdev", spec: "language", emphasis: 1, start_time: 3, end_time: 4},
+    { topic: "js event listeners", type: "webdev", spec: "language", emphasis: 1, start_time: 8, end_time: 9},
+    { topic: "d3 data bind", type: "d3", spec: "library", emphasis: 1, start_time: 6, end_time: 8},
+    { topic: "d3 scales,<tspan dy='28' dx='-110'>transitions</tspan>,<tspan dy='28' dx='-138'>axes,</tspan><tspan dy='28' dx='-63'>interactivity</tspan>", type: "d3", spec: "library", emphasis: 1, start_time: 7, end_time: 10},
+    { topic: "d3 maps/projections", type: "d3", spec: "library", emphasis: 1, start_time: 18, end_time: 24},
+    { topic: "python", type: "data-analysis", spec: "language", emphasis: 1, start_time: 4, end_time: 6},
+    { topic: "python pandas,<tspan dy='28' dx='-170'>matplotlib, seaborn", type: "data-analysis", spec: "library", emphasis: 1, start_time: 4, end_time: 6},
+    { topic: "exploratory data viz", type: "data-analysis", spec: "concept", emphasis: 1, start_time: 4, end_time: 12},
+    { topic: "statistics", type: "data-analysis", spec: "concept", emphasis: 1, start_time: 4, end_time: 5},
+    { topic: "cartography", type: "conceptual", spec: "concept", emphasis: 1, start_time: 18, end_time: 24},
+    { topic: "text data", type: "data-analysis", spec: "concept", emphasis: 1, start_time: 25, end_time: 30},
+    { topic: "acquiring data", type: "data-analysis", spec: "concept", emphasis: 1, start_time: 10, end_time: 12},
+    // { topic: "javascript", type: "webdev", spec: "language", emphasis: 1, start_time: 3, end_time: 4},
+    // { topic: "manipulating the DOM", type: "webdev", spec: "language", emphasis: 1, start_time: 3, end_time: 4},
+    // { topic: "d3", type: "d3", spec: "library", emphasis: 1, start_time: 6, end_time: 10},
+    // { topic: "d3 scales", type: "d3", spec: "library", emphasis: 1, start_time: 7, end_time: 9},
+    // { topic: "d3 transitions", type: "d3", spec: "library", emphasis: 1, start_time: 7, end_time: 9},
+    // { topic: "d3 axes", type: "d3", spec: "library", emphasis: 1, start_time: 8, end_time: 10},
+    // { topic: "d3 interactivity", type: "d3", spec: "library", emphasis: 1, start_time: 8, end_time: 10},
+    // { topic: "d3 force-directed layouts", type: "d3", spec: "library", emphasis: 1, start_time: , end_time: },
+    // { topic: "matplotlib/seaborn", type: "data-analysis", spec: "library", emphasis: 1, start_time: 4, end_time: 6},
+];
+
+// ******* Constants *******
+const width = 1000,
+      height = 600,
+      specs = ["standard", "language", "library", "examples", "concept", "idea"],
+      margin = {
+          top: 100,
+          bottom: 10,
+          left: 100,
+          right: 10,
+      },
+      vert_spacing = 10,
+      roundedness = 6,
+      emphasis_scale = 0.5,
+      day_spacing = 5,
+      large_font = 28
+      legend_y = height + 50,
+      legend_width = 140;
+
+const rect_height = (height - margin.top - margin.bottom) / 6 - vert_spacing;
+
+const time_blocks = [
+    {title: "Labs and Learning", start_time: 0, end_time: 12},
+    {title: "Test", start_time: 12, end_time: 13},
+    {title: "Dashboard", start_time: 13, end_time: 18},
+    {title: "Maps", start_time: 18, end_time: 24},
+    {title: "Text", start_time: 24, end_time: 30},
+    {title: "Open", start_time: 30, end_time: 36}
+];
+
+const topic_types = [
+    {type: "webdev", pretty: "Web Development"},
+    {type: "d3", pretty: "D3.js"},
+    {type: "data-analysis", pretty: "Data Analysis"},
+    {type: "conceptual", pretty: "Conceptual"},
+    {type: "examples", pretty: "Examples"},
+];
+
+// ******* Scales *******
+var y = d3.scaleOrdinal()
+    .domain(specs)
+    .range([0, 1, 2, 3, 4, 5].map(i => (height - margin.top - margin.bottom) * i / 6));
+var x = d3.scaleLinear().domain([0, 36]).range([0, width - margin.left - margin.right]);
+
+// ******* Create SVG *******
+var svg = d3.select("#container").append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .style("margin", "0 auto")
+    .style("display", "block")
+    .style("overflow", "visible") // for axis labels and legend
+
+// ******* Time Blocks *******
+var time_block_rects = svg.selectAll(".time_blocks")
+    .data(time_blocks)
+    .enter()
+    .append("rect")
+    .attr("width", function(d) {return x(d.end_time) - x(d.start_time) - day_spacing})
+    .attr("height", height - margin.bottom)
+    .attr("x", function(d) {return margin.left + x(d.start_time)})
+    .attr("y", 0)
+    .attr("rx", 3)
+    .attr("ry", 3)
+    .attr("class", "time-block")
+    .attr("fill-opacity", 0.1)
+    .attr("fill", "rgb(185, 185, 185)")
+    .on("click", function(d, i) {
+        if (!d3.select(this).classed("active")) {
+          d3.select(this).attr("fill","#ab9969").attr("stroke", "rgba(128, 128, 128, 0.33)").classed("active", true);
+          d3.selectAll(".time-block-labels")
+              .filter(function(label_d) {return label_d.title === d.title})
+              .style("visibility", "visible");
+        } else {
+          d3.select(this).attr("fill","rgb(185, 185, 185)").attr("stroke", "none").classed("active", false);
+          d3.selectAll(".time-block-labels")
+              .filter(function(label_d) {return label_d.title === d.title})
+              .style("visibility", "hidden");
+        }
+    })
+
+var time_block_labels = svg.selectAll(".time-block-labels")
+    .data(time_blocks)
+    .enter()
+    .append("text")
+    .text(function(d) {return d.title})
+    .attr("x", function(d) {
+        return margin.left + (x(d.end_time) - x(d.start_time)) / 2 + x(d.start_time) - 2.5;
+    })
+    .attr("y", 3 * vert_spacing)
+    .classed("time-block-labels", true)
+    .attr("font-size", large_font)
+    .style("visibility", "hidden")
+
+// ******* Axes *******
+x_axis = d3.axisTop(d3.scaleLinear().domain([1,10]).range([0, width - margin.left - margin.right])).ticks(7)
+
+svg.append("g")
+    .attr("transform",`translate(${margin.left}, ${margin.top - 5})`)
+    .call(x_axis);
+
+svg.append("text")
+    .attr("transform",
+          `translate(${width + 20}, ${margin.top})`)
+    .text("Week")
+    .attr("font-size", large_font);
+
+svg.append("g")
+    .attr("transform", `translate(${margin.left}, ${margin.top + rect_height/2})`)
+    .call(d3.axisLeft(y))
+
+svg.append("text")
+    .attr("transform",
+        `translate(${margin.left-10}, ${height}) rotate(90) `)
+    .text("Specificity")
+    .attr("font-size", large_font);
+
+// ******* Topic blocks *******
+var boxes = svg.selectAll(".topic")
+    .data(topics)
+    .enter()
+    .append("rect")
+    .attr("width", function(d) {return x(d.end_time) - x(d.start_time) - day_spacing})
+    .attr("height", function(d) {
+        return rect_height * (1 - emphasis_scale * (d.end_time - d.start_time)/36)
+    })
+    .attr("x", function(d) {return margin.left + x(d.start_time)})
+    .attr("y", function(d) {
+        return margin.top + y(d.spec) + 0.5 * (rect_height - d3.select(this).attr("height"))
+    })
+    .attr("rx", roundedness)
+    .attr("ry", roundedness)
+    .attr("class", function(d) {return "topic " + d.type})
+    .attr("fill-opacity", function(d) {
+      return 1 - (emphasis_scale + 0.15) * (d.end_time - d.start_time) / 36;
+    })
+    .style("visibility", "hidden")
+    .on("mouseover", function(d, i) {
+        d3.select(this)
+            .transition(function(d) {return "move_out " + d.topic})
+            .duration(300)
+            .attr("stroke-width", 2)
+            .attr("fill-opacity", 1)
+
+        d3.selectAll(".text-labels")
+            .filter(function(label_d) {return label_d.topic === d.topic})
+            .transition(function(d) {return "move_out " + d.topic})
+            .duration(500)
+            .attr("x", width / 2)
+            .attr("y", height / 4)
+            .attr("font-size", large_font);
+    })
+    .on("mouseout", function(d, i) {
+        d3.select(this)
+            .transition(function(d) {return "move_out " + d.topic})
+            .duration(300)
+            .attr("stroke-width", 1)
+            .attr("fill-opacity", function(d) {
+              return 1 - (emphasis_scale + 0.15) * (d.end_time - d.start_time) / 36;
+            })
+        d3.selectAll(".text-labels")
+            .filter(function(label_d) {return label_d.topic === d.topic})
+            .transition(function(d) {return "move_back " + d.topic})
+            .duration(500)
+            .attr("x", function(d) {
+              return margin.left + x(d.start_time) + vert_spacing;
+            })
+            .attr("y", function(d) {
+              return margin.top + y(d.spec) + (rect_height + vert_spacing) / 2;
+            })
+            .attr("font-size", 0);
+    })
+
+  var labels = svg.selectAll(".text-labels")
+      .data(topics)
+      .enter()
+      .append("text")
+      .html(function(d) {return d.topic})
+      .attr("x", function(d) {
+        return margin.left + x(d.start_time) + vert_spacing;
+      })
+      .attr("y", function(d) {
+        return margin.top + y(d.spec) + (rect_height + vert_spacing) / 2;
+      })
+      .attr("class", function(d) {return "topic " + d.type})
+      .classed("text-labels", true)
+      .attr("font-size", 0)
+      .style("stroke", "none")
+
+// ******* Legend *******
+legend_boxes = svg.selectAll(".legend_box")
+    .data(topic_types)
+    .enter()
+    .append("rect")
+    .attr("x", function(d,i) {return margin.left + (30 + legend_width) * i + legend_width })
+    .attr("y", legend_y)
+    .attr("width", legend_width)
+    .attr("height", rect_height)
+    .attr("rx", roundedness)
+    .attr("ry", roundedness)
+    .attr("fill-opacity", .4)
+    .attr("class", d => "topic legend_box " + d.type)
+    .on("click", function(d) {
+
+
+
+        if (!d3.select(this).classed("active_legend")) {
+          d3.select(this).classed("active_legend", true);
+          d3.selectAll("." + d.type)
+              .filter(function(e) {return e !== d })
+              .style("visibility", "visible");
+        } else {
+          d3.select(this).classed("active_legend", false);
+          d3.selectAll("." + d.type) // d3.select(this).datum() needed?
+              .filter(function(e) {return e !== d})
+              .style("visibility", "hidden");
+        }
+    })
+
+legend_text = svg.selectAll(".legend_text")
+    .data(topic_types)
+    .enter()
+    .append("text")
+    .attr("x", function(d,i) {return margin.left + (30 + legend_width) * i + 3 * legend_width / 2 })
+    .attr("y", legend_y + rect_height / 2 + 5)
+    .text(function(d) {return d.pretty})
+    .attr("stroke", "none")
+    .attr("text-anchor", "middle")
+    .attr("class", d => "legend_text")
+
+</script>
+</body>
+</html>

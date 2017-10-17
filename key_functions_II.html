@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <title>D3 Keys</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <style>
+    body {
+      text-align: center;
+      font-family: 'Roboto', sans-serif;
+    }
+    text {
+      pointer-events: none;
+    }
+    h1 {
+      font-family: 'Georgia', serif;
+      font-weight: 200;
+    }
+
+    #container {
+      margin: 0 auto;
+      margin-top: 50px;
+      /*margin-bottom: 50px;*/
+      width: 95%;
+    }
+    </style>
+    <script src='https://d3js.org/d3.v4.min.js'></script>
+</head>
+<body>
+  <h1> Significance of D3 Keys, II</h1>
+<div id="container"></div>
+<p>
+  This example now has a key function, unlike the <a href="./key_functions_I.html">previous</a>.  Click to delete any circle.  Here's the data:
+</p>
+<p id="data">
+</p>
+<script>
+// ******* Constants *******
+const width = 1000,
+      height = 600,
+      fontsize = 20;
+
+/* A key function is an accessor to anything unique about your rows.  In
+ * this case, every "column" in our dataset uniquely identifies a row,
+ * so we can use any of them. */
+const my_data = [
+  {"x":1, "y": 4, "color": "red"},
+  {"x":2, "y": 1, "color": "blue"},
+  {"x":3, "y": 3, "color": "violet"},
+  {"x":4, "y": 2, "color": "green"},
+]
+
+updateDataDisplay();
+
+// ******* Set Scales *******
+var x = d3.scaleLinear()
+    .domain([0, 5])
+    .range([0, width])
+var y = d3.scaleLinear()
+    .domain([0, 5])
+    .range([0, height])
+
+// ******* Create SVG *******
+var svg = d3.select("#container").append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .style("margin", "0 auto")
+    .style("display", "block")
+    .style("overflow", "visible")
+
+// ******* Add data *******
+var circles = svg.selectAll("circle")
+    .data(my_data, function(d) {return d.color})         // Using a key!!
+    .enter()
+    .append("circle")
+    .attr("cx", function(d) {return x(d.x)})
+    .attr("cy", function(d) {return y(d.y)})
+    .attr("fill", function(d) {return d.color})
+    .attr("r", 20)
+    .on("click", function(d, i) {
+        // Remove the correct item from the dataset
+        // This feels clunkier to me than it needs to.
+        var datum = d3.select(this).datum();
+        var index = my_data.findIndex(function(d) {return d.color === datum.color})
+        my_data.splice(index, 1);
+
+        updateDataDisplay();
+
+        // Rebind (!!) the data to perform the remove.
+        d3.selectAll("circle")
+            .data(my_data, function(d) {return d.color}) // Using a key!!
+            .exit()
+            .attr("fill-opacity", 1.0)
+            .transition()
+            .duration(600)
+            .attr("fill-opacity", 0.0)
+            .remove();
+
+        /* Repeat the above with the text element to remove it.  (This
+         * would have been better to put into a <g> element, but I
+         * thought this was clearer.)*/
+        d3.selectAll("text").data(my_data, function(d) {return d.color}).exit()
+            .attr("fill-opacity", 1.0)
+            .transition()
+            .duration(600)
+            .attr("fill-opacity", 0.0)
+            .remove();
+    });
+
+// Show the indices in the dataset corresponding to the circles
+svg.selectAll("text")
+    .data(my_data, function(d) {return d.color})
+    .enter()
+    .append("text")
+    .text(function(d, i) {return i})
+    .attr("x", function(d) {return x(d.x)})
+    .attr("y", function(d) {return y(d.y)})
+    .attr("text-anchor", "middle")              // center horizontally
+    .attr("dominant-baseline", "central")       // center vertically
+    .attr("font-size", fontsize)
+    .attr("stroke", "white")
+    .attr("fill", "white")
+
+function updateDataDisplay() {
+    d3.select("#data").html(JSON.stringify(my_data));
+}
+
+</script>
+</body>
+</html>

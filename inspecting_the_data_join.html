@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <title>D3 Data Join</title>
+    <link href="https://fonts.googleapis.com/css?family=Ubuntu" rel="stylesheet">
+    <script src='https://d3js.org/d3.v4.min.js'></script>
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+
+<style>
+#container {
+  font-family: 'Roboto', sans-serif;
+  width: 96%;
+  margin: 0 auto;
+}
+h1 {
+  text-align: center;
+}
+#chart {
+  min-height: 280px;
+  /*margin-top: 50px;*/
+  margin-bottom: 50px;
+  width: 60%;
+  margin-right: 3%;
+  margin-left: 5%;
+  float:right;
+}
+
+#instructions {
+  margin-left: 3%;
+  /*width: 100%;*/
+  /*float: left;*/
+}
+h3 {
+  margin-top:
+}
+
+.well {
+  border: 1px solid rgb(98, 123, 135);
+  border-radius: 10px;
+  background-color: rgb(222, 244, 255);
+  padding: 5px;
+}
+
+.well p {
+  margin-top:.em;
+  margin-bottom:.em;
+}
+.enter,.update,.exit {
+  font-weight: bold;
+  font-size: 1.1em;
+}
+.enter {
+  fill: green;
+  color: green;
+}
+.update {
+  fill: blue;
+  color: blue;
+}
+.exit {
+  fill: red;
+  color: red;
+}
+.hint {
+  font-size:.6em;
+}
+.hint-text {
+  border: 1px solid #777;
+  border-radius: 5px;
+  width: 40%;
+  padding: 5px;
+}
+
+button {
+    background-color: rgb(51, 41, 130);
+    vertical-align: top;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    float:right;
+    font-size: 16px;
+}
+button:active {
+  /*background-color: #3e8e41;
+  box-shadow: 0 5px #666;*/
+  transform: translate(1px,2px);
+}
+</style>
+
+</head>
+<body>
+<div id="container">
+  <h1>The D3 Data Join: Inspect </h1>
+  <div id="instructions">
+    <div id="chart">
+    </div>
+    <p>
+      This is a simple visualization that should help to enforce the idea of the databind.  I have defined in the scripts of this site, two datasets:
+    </p>
+<pre><code>
+var data_at_t0 = [
+  {x: 1, y: 2, id: "a", type: "update"},
+  {x: 3, y: 2, id: "b", type: "update"},
+  <span class="exit">{x: 2, y: 1, id: "c", type: "exit"}</span>,
+];
+</code>
+</pre>
+<p>
+  and:
+</p>
+<pre><code>
+var data_at_t1 = [
+  {"x": 1, "y": 2, "id": "a", "type": "update"},
+  {"x": 3, "y": <span class="update">3</span>, "id": "b", "type": "update"},
+  <span class="enter">{"x": 1, "y": 1, "id": "d", "type": "enter"}</span>,
+];
+</code>
+</pre>
+<p>
+  I have then bound the data to my SVG, variable name <code>svg</code> and generated circles based upon the <code>data_at_t0</code> dataset.  They are colored, however, based upon whether they will be in the <span class="enter">enter</span>, <span class="update">update</span>, or <span class="exit">exit</span> selections <em>at time</em> <code>t_1.</code>
+</p>
+<div class="well">
+  <h3>Directions:
+  <button onclick="reset(data_at_t0)"> Reset data </button>
+  </h3>
+  <p id="bind">
+    Open up the console on your browser, rebind the selection <code>svg.selectAll("circle")</code> to <code>data_at_t1</code>, and then take a look at what is returned.  Can you see the <span class="enter">enter</span> selection and <span class="exit">exit</span> selection hiding somewhere in the object (that is, the object returned by the call to <code>.data(...)</code>, which is the <span class="update">update</span> selection)?  <em>Hint:</em> look for <code>_enter</code> and <code>_exit</code>. Can you make sense of what is meant when one says that the <span class="enter">enter</span> selection consists of "placeholders"? <span class="hint" onclick=showBindHint()>(hint)</span>
+  </p>
+  <p>
+    After that, try to go through the motions of all the other pieces of the process, inspecting the elements you get along the way:
+  </p>
+    <ul>
+      <li id="enter">
+        <code>.append()</code>-ing new circles in the <span class="enter">enter</span> selection and setting their <code>cx</code>, <code>cy</code>, and <code>r</code> attributes one-by-one, and watching your circle come to life, <span class="hint" onclick=showEnterHint()>(hint)</span>
+      </li>
+      <li id="exit">
+        <code>.remove()</code>-ing circles in the <span class="exit">exit</span> selection,<span class="hint" onclick=showExitHint()>(hint)</span> and
+      </li>
+      <li id="update">
+        resetting the attributes of the circles in the <span class="update">update</span> selection. <span class="hint" onclick=showUpdateHint()>(hint)</span>
+      </li>
+    </ul>
+    <p>
+      Hopefully doing this a few times will help you to understand the data bind process.  Feel free to hit the button to reset the content.
+    </p>
+</div>
+</div>
+</div>
+
+<script>
+var data_at_t0 = [
+  {x: 1, y: 2, id: "a", type: "update"},
+  {x: 3, y: 2, id: "b", type: "update"},
+  {x: 2, y: 1, id: "c", type: "exit"},
+];
+
+var data_at_t1 = [
+  {x: 1, y: 2, id: "a", type: "update"},
+  {x: 3, y: 3, id: "b", type: "update"},
+  {x: 1, y: 1, id: "d", type: "enter"},
+];
+
+const margin = {
+  top: 10,
+  bottom: 20,
+  left: 20,
+  right: 10,
+},
+  chart = d3.select("#chart"),
+  width = parseFloat(chart.style("width")) - 50,
+  height = parseFloat(chart.style("height")),
+  radius = width / 80;
+
+var x = d3.scaleLinear()
+    .domain([0, 4])
+    .range([margin.left, width - margin.right])
+
+var y = d3.scaleLinear()
+    .domain([0, 3])
+    .range([height - margin.bottom, margin.top])
+
+var svg = chart.append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .attr("overflow", "visible") // just in case!
+
+var circles = svg.selectAll("circle")
+  .data(data_at_t0, function(d) {return d.id})
+  .enter()
+    .append("circle")
+    .attr("r", radius)
+    .attr("cx", function(d) {return x(d.x)})
+    .attr("cy", function(d) {return y(d.y)})
+    .attr("class", function(d) {return d.type})
+
+var x_axis = svg.append("g")
+    .attr("transform", `translate(0,${height - margin.bottom})`)
+    .call(d3.axisBottom(x).ticks(3))
+
+var y_axis = svg.append("g")
+    .attr("transform", `translate(${margin.left},${margin.top})`)
+    .call(d3.axisLeft(y).ticks(3))
+
+function reset(dataset) {
+  data_at_t0 = [
+    {x: 1, y: 2, id: "a", type: "update"},
+    {x: 3, y: 2, id: "b", type: "update"},
+    {x: 2, y: 1, id: "c", type: "exit"},
+  ];
+
+  data_at_t1 = [
+    {"x": 1, "y": 2, "id": "a", "type": "update"},
+    {"x": 3, "y": 3, "id": "b", "type": "update"},
+    {"x": 1, "y": 1, "id": "d", "type": "enter"},
+  ];
+
+  circles = svg.selectAll("circle").data(dataset);
+  circles.exit().remove();
+  circles.enter().append("circle")
+    .merge(circles)
+      .attr("r", radius)
+      .attr("cx", function(d) {return x(d.x)})
+      .attr("cy", function(d) {return y(d.y)})
+      .attr("class", function(d) {return d.type})
+}
+
+function showBindHint() {
+  d3.select("#bind").append("pre").classed("hint-text", true)
+  .html("<code>var circles = svg.selectAll('circle')<br  />    .data(data_at_t1, function(d){return d.id})<br  />circles        // to inspect what's returned</code>")
+}
+
+function showEnterHint() {
+  d3.select("#enter").append("pre").classed("hint-text", true)
+  .html("<code>circles.enter().append('circle')<br />    .attr('cx', function(d){return x(d.x)})<br />    .attr('cy', function(d){return y(d.y)})<br />    .attr('r', radius)<br />    .attr('class', function(d){return d.type})</code>")
+}
+
+function showUpdateHint() {
+  d3.select("#update").append("pre").classed("hint-text", true)
+  .html("<code>circles.attr('cx', function(d){return x(d.x)})<br />    .attr('cy', function(d){return y(d.y)})<br />    .attr('r', radius)<br />    .attr('class', function(d){return d.type})</code>")
+}
+
+function showExitHint() {
+  d3.select("#exit").append("pre").classed("hint-text", true)
+  .html("<code>circles.exit().remove()</code>")
+}
+    </script>
+</body>
+</html>
